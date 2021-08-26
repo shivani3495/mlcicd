@@ -2,23 +2,23 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CloudFormation SageMaker pipeline.
 Parameters:
-  Email:
+  Email: ershivanisaini1995@gmail.com
     Description: The email address where CodePipeline sends pipeline notifications
     Type: String
-  GitHubToken:
+  GitHubToken: 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
     NoEcho: true
     Description: Secret. It might look something like 9b189a1654643522561f7b3ebd44a1531a4287af OAuthToken with access to Repo. Go to https://github.com/settings/tokens
     Type: String
   GitHubUser:
-    Default: stelligent
+    Default: shivani3495
     Description: GitHub UserName
     Type: String
   Repo:
-    Default: sagemaker-pipeline
+    Default: mlcicd
     Description: GitHub Repo to pull from. Only the Name. not the URL
     Type: String
   Branch:
-    Default: master
+    Default: main
     Description: Branch to use from Repo. Only the Name. not the URL
     Type: String
 Metadata:
