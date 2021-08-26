@@ -85,7 +85,7 @@ Resources:
   ModelTrainingProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${AWS::StackName}-pipeline-modeltraining
+      Name: !Sub ${AWS::StackName}-sagemakerstack
       Description: Trains machine learning model using SageMaker
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
@@ -107,8 +107,8 @@ Resources:
                 - printenv
             build:
               commands:
-                - echo "Running training.py"
-                - python3 Source/training.py "${SagemakerRole.Arn}" "${DataBucket}" "${AWS::StackName}" $CODEBUILD_RESOLVED_SOURCE_VERSION
+                - echo "Running linear mnist.py"
+                - python3 Source/linear mnist.py "${SagemakerRole.Arn}" "${DataBucket}" "${AWS::StackName}" $CODEBUILD_RESOLVED_SOURCE_VERSION
             post_build:
               commands:
                 - echo "Cleaning"
@@ -116,64 +116,6 @@ Resources:
           artifacts:
             files:
               - '**/*'
-      TimeoutInMinutes: 30
-
-  TestEndpointProjectQA:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Sub ${AWS::StackName}-pipeline-test-qa
-      Description: Checks if endpoint is working
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/eb-python-3.4-amazonlinux-64:2.1.6
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          phases:
-            install:
-              commands:
-                - echo "Installing wget and boto3"
-                - pip3 install wget
-                - pip3 install boto3
-                - pip3 install numpy
-            build:
-              commands:
-              - echo "Running test.py"
-              - python3 Source/test.py "qa-${AWS::StackName}" "CloudFormation/configuration_qa.json"
-      TimeoutInMinutes: 30
-
-  TestEndpointProjectProd:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Sub ${AWS::StackName}-pipeline-test-prod
-      Description: Checks if endpoint is working
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/eb-python-3.4-amazonlinux-64:2.1.6
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          phases:
-            install:
-              commands:
-                - echo "Installing wget and boto3"
-                - pip3 install wget
-                - pip3 install boto3
-                - pip3 install numpy
-            build:
-              commands:
-              - echo "Running test.py"
-              - python3 Source/test.py "prod-${AWS::StackName}" "CloudFormation/configuration_prod.json"
       TimeoutInMinutes: 30
 
   Pipeline:
@@ -195,10 +137,10 @@ Resources:
                 Provider: GitHub
                 Version: '1'
               Configuration:
-                Owner: !Ref 'GitHubUser'
-                Repo: !Ref 'Repo'
-                Branch: !Ref 'Branch'
-                OAuthToken: !Ref 'GitHubToken'
+                Owner: !Ref 'shivani3495'
+                Repo: !Ref 'mlcicd'
+                Branch: !Ref 'main'
+                OAuthToken: !Ref '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'
               OutputArtifacts:
                 - Name: src
               RunOrder: '1'
