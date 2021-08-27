@@ -2,31 +2,32 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   CloudFormation SageMaker pipeline.
 Parameters:
-  Email: ershivanisaini1995@gmail.com
-    Description: The email address where CodePipeline sends pipeline notifications
-    Type: String
-  GitHubToken: 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
-    NoEcho: true
-    Description: Secret. It might look something like 9b189a1654643522561f7b3ebd44a1531a4287af OAuthToken with access to Repo. Go to https://github.com/settings/tokens
-    Type: String
-  GitHubUser:
-    Default: shivani3495
-    Description: GitHub UserName
-    Type: String
-  Repo:
-    Default: mlcicd
-    Description: GitHub Repo to pull from. Only the Name. not the URL
-    Type: String
-  Branch:
-    Default: main
-    Description: Branch to use from Repo. Only the Name. not the URL
-    Type: String
+    Email:
+      Description: The email address where CodePipeline sends pipeline notifications
+      Type: String
+    GitHubToken: 
+      NoEcho: true
+      Description: Secret. It might look something like 9b189a1654643522561f7b3ebd44a1531a4287af OAuthToken with access to Repo. Go to https://github.com/settings/tokens
+      Type: String
+    GitHubUser: 
+      Default: shivani3495
+      Description: GitHub UserName
+      Type: String
+    Repo: 
+      Default: mlcicd
+      Description: GitHub Repo to pull from. Only the Name. not the URL
+      Type: String
+    Branch:
+      Default: main
+      Description: Branch to use from Repo. Only the Name. not the URL
+      Type: String
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
           default: "Stack Settings"
-        Parameters:
+    Parameters:
           - Email
           - GitHubToken
           - GitHubUser
@@ -55,68 +56,7 @@ Resources:
       Subscription:
         - Endpoint: !Ref Email
           Protocol: email
-          
-  
-  CFNNagProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Sub ${AWS::StackName}-pipeline-cfnnag
-      Description: Lints CloudFormation
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/eb-ruby-2.3-amazonlinux-64:2.1.6
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          phases:
-            install:
-              commands:
-                - gem install cfn-nag
-            build:
-              commands:
-                - cfn_nag_scan --input-path CloudFormation/*.yaml
-      TimeoutInMinutes: 30
-
-  ModelTrainingProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: !Sub ${AWS::StackName}-sagemakerstack
-      Description: Trains machine learning model using SageMaker
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/eb-python-3.4-amazonlinux-64:2.1.6
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          phases:
-            install:
-              commands:
-                - echo "Installing wget and boto3"
-                - pip3 install wget
-                - pip3 install boto3
-                - printenv
-            build:
-              commands:
-                - echo "Running linear mnist.py"
-                - python3 Source/linear mnist.py "${SagemakerRole.Arn}" "${DataBucket}" "${AWS::StackName}" $CODEBUILD_RESOLVED_SOURCE_VERSION
-            post_build:
-              commands:
-                - echo "Cleaning"
-                - rm caltech*
-          artifacts:
-            files:
-              - '**/*'
-      TimeoutInMinutes: 30
+        
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -137,39 +77,13 @@ Resources:
                 Provider: GitHub
                 Version: '1'
               Configuration:
-                Owner: !Ref 'shivani3495'
-                Repo: !Ref 'mlcicd'
-                Branch: !Ref 'main'
-                OAuthToken: !Ref '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'
+                Owner: !Ref 'GitHubUser'
+                Repo: !Ref 'Repo'
+                Branch: !Ref 'Branch'
+                OAuthToken: !Ref 'GitHubToken'
               OutputArtifacts:
                 - Name: src
               RunOrder: '1'
-        - Name: Build_and_Train
-          Actions:
-            - Name: cfn-nag
-              ActionTypeId:
-                Category: Test
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref 'CFNNagProject'
-              InputArtifacts:
-                - Name: src
-              RunOrder: '1'
-            - Name: ModelTraining
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref 'ModelTrainingProject'
-              InputArtifacts:
-                - Name: src
-              OutputArtifacts:
-                - Name: bld
-              RunOrder: '2'
         - Name: QA
           Actions:
             - Name: LaunchEndpoint
@@ -187,17 +101,7 @@ Resources:
                 TemplatePath: !Sub "bld::CloudFormation/sagemaker.yaml"
                 TemplateConfiguration: "bld::CloudFormation/configuration_qa.json"
               RunOrder: '1'
-            - Name: TestEndpoint
-              ActionTypeId:
-                Category: Test
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref 'TestEndpointProjectQA'
-              InputArtifacts:
-                - Name: bld
-              RunOrder: '2'
+            
         - Name: Production
           Actions:
             - Name: ApprovalGate
@@ -225,17 +129,6 @@ Resources:
                 TemplatePath: !Sub "bld::CloudFormation/sagemaker.yaml"
                 TemplateConfiguration: "bld::CloudFormation/configuration_prod.json"
               RunOrder: '2'
-            - Name: TestEndpoint
-              ActionTypeId:
-                Category: Test
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref 'TestEndpointProjectProd'
-              InputArtifacts:
-                - Name: bld
-              RunOrder: '3'
 
   CFNRole:
     Type: AWS::IAM::Role
