@@ -5,7 +5,6 @@ import re
 import boto3
 import sagemaker
 from sagemaker import get_execution_role
-
 sess = sagemaker.Session()
 
 region = boto3.Session().region_name
