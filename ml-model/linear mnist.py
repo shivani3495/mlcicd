@@ -2,8 +2,6 @@
 # coding: utf-8
 
 # In[1]:
-
-
 import re
 import boto3
 import sagemaker
