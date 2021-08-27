@@ -83,8 +83,8 @@ Resources:
                 - printenv
             build:
               commands:
-                - echo "Running linear mnist.py"
-                - python3 ml-model/linear mnist.py "${SagemakerRole.Arn}" "${DataBucket}" "${AWS::StackName}" $CODEBUILD_RESOLVED_SOURCE_VERSION
+                - echo "Running training.py"
+                - python Source/training.py "${SagemakerRole.Arn}" "${DataBucket}" "${AWS::StackName}" $CODEBUILD_RESOLVED_SOURCE_VERSION
             post_build:
               commands:
                 - echo "Cleaning"
