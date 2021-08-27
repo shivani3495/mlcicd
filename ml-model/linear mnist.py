@@ -181,6 +181,3 @@ pd.crosstab(
 
 # In[ ]:
 
-
-
-
