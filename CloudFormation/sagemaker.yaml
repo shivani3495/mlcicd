@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AWS SageMakerEndpoint'
+Description: 'AWS SageMaker Endpoint'
 Parameters:
   BucketName:
     Description: Name of data bucket
